@@ -402,7 +402,10 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
                 attendees.append(attendee!)
             }
         }
-
+        let organizer = convertEkParticipantToAttendee(ekParticipant: ekEvent.organizer);
+        if (organizer != nil) {
+            attendees.append(organizer!);
+        }
         var reminders = [Reminder]()
         if ekEvent.alarms != nil {
             for alarm in ekEvent.alarms! {
