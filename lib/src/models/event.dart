@@ -8,6 +8,9 @@ import '../common/error_messages.dart';
 /// An event associated with a calendar
 class Event {
   /// Read-only. The unique identifier for this event. This is auto-generated when a new event is created
+  String? externalEventId;
+
+  /// Read-only. The unique identifier for this event. This is auto-generated when a new event is created
   String? eventId;
 
   /// Read-only. The identifier of the calendar that this event is associated with
@@ -60,7 +63,7 @@ class Event {
   ///`android/src/main/kotlin/com/builttoroam/devicecalendar/CalendarDelegate.kt`
   ///`android/src/main/kotlin/com/builttoroam/devicecalendar/DeviceCalendarPlugin.kt`
   Event(this.calendarId,
-      {this.eventId,
+      {this.externalEventId, this.eventId,
       this.title,
       this.start,
       this.end,
@@ -105,7 +108,7 @@ class Event {
         legacyJSON = true;
       }
     });
-
+    eventId = json['externalEventId'];
     eventId = json['eventId'];
     calendarId = json['calendarId'];
     title = json['eventTitle'];
@@ -223,6 +226,7 @@ class Event {
     final data = <String, dynamic>{};
 
     data['calendarId'] = calendarId;
+    data['externalEventId'] = eventId;
     data['eventId'] = eventId;
     data['eventTitle'] = title;
     data['eventDescription'] = description;

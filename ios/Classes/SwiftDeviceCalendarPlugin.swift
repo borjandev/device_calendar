@@ -35,6 +35,7 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
     }
 
     struct Event: Codable {
+        let externalEventId: String
         let eventId: String
         let calendarId: String
         let eventTitle: String
@@ -415,6 +416,7 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
 
         let recurrenceRule = parseEKRecurrenceRules(ekEvent)
         let event = Event(
+            externalEventId: ekEvent.calendarItemIdentifier,
             eventId: ekEvent.eventIdentifier,
             calendarId: calendarId,
             eventTitle: ekEvent.title ?? "New Event",
