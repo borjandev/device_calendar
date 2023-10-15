@@ -938,6 +938,7 @@ class CalendarDelegate(binding: ActivityPluginBinding?, context: Context) :
         val endTimeZone = cursor.getString(Cst.EVENT_PROJECTION_END_TIMEZONE_INDEX)
         val availability = parseAvailability(cursor.getInt(Cst.EVENT_PROJECTION_AVAILABILITY_INDEX))
         val eventStatus = parseEventStatus(cursor.getInt(Cst.EVENT_PROJECTION_STATUS_INDEX))
+        val externalEventId = cursor.getString(Cst.EVENT_PROJECTION_SYNC_ID_INDEX)
         val event = Event()
         event.eventTitle = title ?: "New Event"
         event.eventId = eventId.toString()
@@ -953,7 +954,7 @@ class CalendarDelegate(binding: ActivityPluginBinding?, context: Context) :
         event.eventEndTimeZone = endTimeZone
         event.availability = availability
         event.eventStatus = eventStatus
-
+        event.externalEventId = externalEventId
         return event
     }
 
