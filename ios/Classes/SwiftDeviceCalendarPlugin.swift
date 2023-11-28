@@ -104,6 +104,7 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
     let calendarReadOnlyErrorMessageFormat = "Calendar with ID %@ is read-only"
     let eventNotFoundErrorMessageFormat = "The event with the ID %@ could not be found"
     let eventStore = EKEventStore()
+    let refreshSourcesMethod = "refreshSources"
     let requestPermissionsMethod = "requestPermissions"
     let hasPermissionsMethod = "hasPermissions"
     let retrieveCalendarsMethod = "retrieveCalendars"
@@ -167,6 +168,8 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
         switch call.method {
         case requestPermissionsMethod:
             requestPermissions(result)
+        case refreshSourcesMethod:
+            refreshSources(result)
         case hasPermissionsMethod:
             hasPermissions(result)
         case retrieveCalendarsMethod:
@@ -189,6 +192,11 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
         default:
             result(FlutterMethodNotImplemented)
         }
+    }
+
+    private func refreshSources(_ result: FlutterResult) {
+        eventStore.refreshSourcesIfNecessary()
+        result(true)
     }
 
     private func hasPermissions(_ result: FlutterResult) {
