@@ -32,6 +32,13 @@ class DeviceCalendarPlugin {
   @visibleForTesting
   DeviceCalendarPlugin.private();
 
+  /// Refreshes sources on iOS
+  Future<Result<bool>> refreshSources() async {
+    return _invokeChannelMethod(
+      ChannelConstants.methodNameRefreshSources,
+    );
+  }
+  
   /// Requests permissions to modify the calendars on the device
   ///
   /// Returns a [Result] indicating if calendar READ and WRITE permissions
