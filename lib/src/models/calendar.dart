@@ -25,7 +25,7 @@ class Calendar {
   String? externalID;
 
   // Read-only. The owner email of the calendar
-  String? ownerEmail 
+  String? ownerEmail;
 
   Calendar(
       {this.id,
