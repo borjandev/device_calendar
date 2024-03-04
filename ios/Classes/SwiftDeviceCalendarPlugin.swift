@@ -264,79 +264,81 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
             var ownerEmailSourceIdentifierMap: [String: Set<String>] = [:]
             for ekCalendar in ekCalendars {
                 var ownerEmail = "";
-                let startDate = Date(timeIntervalSince1970: 0);
-                let endDate = Date(timeIntervalSinceNow: 0);
-                let fourYearsInSeconds = 4 * 365 * 24 * 60 * 60
-                let fourYearsTimeInterval = TimeInterval(fourYearsInSeconds)
-                var currentStartDate = startDate
-                // Adding 4 years to the start date
-                var currentEndDate = startDate.addingTimeInterval(fourYearsTimeInterval)
-                while currentEndDate <= endDate {
-                    let predicate = self.eventStore.predicateForEvents(
-                        withStart: currentStartDate,
-                        end: currentEndDate.addingTimeInterval(-1),
-                        calendars: [ekCalendar])
-                    let batch = self.eventStore.events(matching: predicate)
-                    for ekEvent in batch {
-                        let organiser = convertEkParticipantToAttendee(ekParticipant: ekEvent.organizer);
-                        if (organiser != nil) {
-                            if (organiser?.isCurrentUser == true) {
-                                let organiserEmail = organiser?.emailAddress ?? "";
-                                if (organiserEmail.isEmpty != true && organiserEmail.contains("%") != true) {
-                                    ownerEmail = organiserEmail;
-                                    if (ownerEmail.isEmpty != true) {
-                                        // Break from the organiser loop
-                                        break;
+                let sharedOwnerMailTo = ekCalendar.value(forKeyPath: "_persistentObject._loadedProperties.sharedOwnerURLString") as? String;
+                let desiredOwnerEmail = sharedOwnerMailTo?.replacingOccurrences(of: "mailto:", with: "") ?? "";
+                if (desiredOwnerEmail.isEmpty != true && (desiredOwnerEmail.contains("%") != true && desiredOwnerEmail.contains("group.calendar") != true)) {
+                    ownerEmail = desiredOwnerEmail;
+                    let sourceIdentifierSet = ownerEmailSourceIdentifierMap[ownerEmail];
+                    if (sourceIdentifierSet == nil) {
+                        ownerEmailSourceIdentifierMap[ownerEmail] = Set([ekCalendar.source.sourceIdentifier]);
+                    } else {
+                        ownerEmailSourceIdentifierMap[ownerEmail]?.insert(ekCalendar.source.sourceIdentifier);
+                    }
+                    
+                }
+                if (ownerEmail.isEmpty) {
+                    let startDate = Date(timeIntervalSince1970: 0);
+                    let endDate = Date(timeIntervalSinceNow: 0);
+                    let fourYearsInSeconds = 4 * 365 * 24 * 60 * 60
+                    let fourYearsTimeInterval = TimeInterval(fourYearsInSeconds)
+                    var currentStartDate = startDate
+                    // Adding 4 years to the start date
+                    var currentEndDate = startDate.addingTimeInterval(fourYearsTimeInterval)
+                    
+                    while currentEndDate <= endDate {
+                        let predicate = self.eventStore.predicateForEvents(
+                            withStart: currentStartDate,
+                            end: currentEndDate.addingTimeInterval(-1),
+                            calendars: [ekCalendar])
+                        let batch = self.eventStore.events(matching: predicate)
+                        for ekEvent in batch {
+                            let organiser = convertEkParticipantToAttendee(ekParticipant: ekEvent.organizer);
+                            if (organiser != nil) {
+                                if (organiser?.isCurrentUser == true) {
+                                    let organiserEmail = organiser?.emailAddress ?? "";
+                                    if (organiserEmail.isEmpty != true && organiserEmail.contains("%") != true && organiserEmail.contains("group.calendar") != true) {
+                                        ownerEmail = organiserEmail;
+                                        if (ownerEmail.isEmpty != true) {
+                                            // Break from the organiser loop
+                                            break;
+                                        }
                                     }
                                 }
                             }
-                        }
-                    
-                        for attendee in ekEvent.attendees ?? [] {
-                            if (attendee.isCurrentUser) {
-                                let attendeeEmail = attendee.emailAddress ?? "";
-                                if (attendeeEmail.isEmpty != true && attendeeEmail.contains("%") != true) {
-                                    ownerEmail = attendeeEmail;
-                                    if (ownerEmail.isEmpty != true) {
-                                        // Break from the attendee loop
-                                        break;
+                            
+                            for attendee in ekEvent.attendees ?? [] {
+                                if (attendee.isCurrentUser) {
+                                    let attendeeEmail = attendee.emailAddress ?? "";
+                                    if (attendeeEmail.isEmpty != true && attendeeEmail.contains("%") != true && attendeeEmail.contains("group.calendar") != true) {
+                                        ownerEmail = attendeeEmail;
+                                        if (ownerEmail.isEmpty != true) {
+                                            // Break from the attendee loop
+                                            break;
+                                        }
                                     }
+                                    
                                 }
-                                
+                            }
+                            if (ownerEmail.isEmpty != true) {
+                                // Break from the event loop
+                                break;
                             }
                         }
                         if (ownerEmail.isEmpty != true) {
-                            // Break from the event loop
-                            break;
-                        }
-                    }
-                    if (ownerEmail.isEmpty != true) {
-                        let sourceIdentifierSet = ownerEmailSourceIdentifierMap[ownerEmail];
-                        if (sourceIdentifierSet == nil) {
-                            ownerEmailSourceIdentifierMap[ownerEmail] = Set([ekCalendar.source.sourceIdentifier]);
-                        } else {
-                            ownerEmailSourceIdentifierMap[ownerEmail]?.insert(ekCalendar.source.sourceIdentifier);
-                        }
-                        break;
-                    } else {
-                        let sharedOwnerMailTo = ekCalendar.value(forKeyPath: "_persistentObject._loadedProperties.sharedOwnerURLString") as? String;
-                        let desiredOwnerEmail = sharedOwnerMailTo?.replacingOccurrences(of: "mailto:", with: "") ?? "";
-                        if (desiredOwnerEmail.isEmpty != true && (desiredOwnerEmail.contains("%") != true)) {
-                            ownerEmail = desiredOwnerEmail;
                             let sourceIdentifierSet = ownerEmailSourceIdentifierMap[ownerEmail];
                             if (sourceIdentifierSet == nil) {
                                 ownerEmailSourceIdentifierMap[ownerEmail] = Set([ekCalendar.source.sourceIdentifier]);
                             } else {
                                 ownerEmailSourceIdentifierMap[ownerEmail]?.insert(ekCalendar.source.sourceIdentifier);
                             }
-                            
+                            // Break out of the event scanning loop
+                            break;
                         }
-                        
-                        
+                        // Move the start and end dates forward by the [fourYearsTimeInterval]
+                        currentStartDate = currentEndDate
+                        currentEndDate = currentStartDate.addingTimeInterval(fourYearsTimeInterval)
                     }
-                    // Move the start and end dates forward by the [fourYearsTimeInterval]
-                    currentStartDate = currentEndDate
-                    currentEndDate = currentStartDate.addingTimeInterval(fourYearsTimeInterval)
+                    
                 }
             }
             
