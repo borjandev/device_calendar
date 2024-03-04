@@ -909,8 +909,8 @@ class CalendarDelegate(binding: ActivityPluginBinding?, context: Context) :
             calendarColor,
             accountName,
             accountType,
-            ownerAccount,
-            externalID
+            "test",
+            ownerAccount
         )
 
         calendar.isReadOnly = isCalendarReadOnly(accessLevel)
