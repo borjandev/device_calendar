@@ -33,7 +33,7 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
         let accountName: String
         let accountType: String
         let externalID: String
-        let ownerEmail: String
+        let ownerAccount: String
     }
     
     struct Event: Codable {
@@ -261,22 +261,22 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
             let ekCalendars = self.eventStore.calendars(for: .event)
             let defaultCalendar = self.eventStore.defaultCalendarForNewEvents
             var calendars = [DeviceCalendar]()
-            var ownerEmailSourceIdentifierMap: [String: Set<String>] = [:]
+            var ownerAccountSourceIdentifierMap: [String: Set<String>] = [:]
             for ekCalendar in ekCalendars {
-                var ownerEmail = "";
+                var ownerAccount = "";
                 let sharedOwnerMailTo = ekCalendar.value(forKeyPath: "_persistentObject._loadedProperties.sharedOwnerURLString") as? String;
-                let desiredOwnerEmail = sharedOwnerMailTo?.replacingOccurrences(of: "mailto:", with: "") ?? "";
-                if (desiredOwnerEmail.isEmpty != true && (desiredOwnerEmail.contains("%") != true && desiredOwnerEmail.contains("group.calendar") != true)) {
-                    ownerEmail = desiredOwnerEmail;
-                    let sourceIdentifierSet = ownerEmailSourceIdentifierMap[ownerEmail];
+                let desiredOwnerAccount = sharedOwnerMailTo?.replacingOccurrences(of: "mailto:", with: "") ?? "";
+                if (desiredOwnerAccount.isEmpty != true && (desiredOwnerAccount.contains("%") != true && desiredOwnerAccount.contains("group.calendar") != true)) {
+                    ownerAccount = desiredOwnerAccount;
+                    let sourceIdentifierSet = ownerAccountSourceIdentifierMap[ownerAccount];
                     if (sourceIdentifierSet == nil) {
-                        ownerEmailSourceIdentifierMap[ownerEmail] = Set([ekCalendar.source.sourceIdentifier]);
+                        ownerAccountSourceIdentifierMap[ownerAccount] = Set([ekCalendar.source.sourceIdentifier]);
                     } else {
-                        ownerEmailSourceIdentifierMap[ownerEmail]?.insert(ekCalendar.source.sourceIdentifier);
+                        ownerAccountSourceIdentifierMap[ownerAccount]?.insert(ekCalendar.source.sourceIdentifier);
                     }
                     
                 }
-                if (ownerEmail.isEmpty) {
+                if (ownerAccount.isEmpty) {
                     let startDate = Date(timeIntervalSince1970: 0);
                     let endDate = Date(timeIntervalSinceNow: 0);
                     let fourYearsInSeconds = 4 * 365 * 24 * 60 * 60
@@ -297,8 +297,8 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
                                 if (organiser?.isCurrentUser == true) {
                                     let organiserEmail = organiser?.emailAddress ?? "";
                                     if (organiserEmail.isEmpty != true && organiserEmail.contains("%") != true && organiserEmail.contains("group.calendar") != true) {
-                                        ownerEmail = organiserEmail;
-                                        if (ownerEmail.isEmpty != true) {
+                                        ownerAccount = organiserEmail;
+                                        if (ownerAccount.isEmpty != true) {
                                             // Break from the organiser loop
                                             break;
                                         }
@@ -310,8 +310,8 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
                                 if (attendee.isCurrentUser) {
                                     let attendeeEmail = attendee.emailAddress ?? "";
                                     if (attendeeEmail.isEmpty != true && attendeeEmail.contains("%") != true && attendeeEmail.contains("group.calendar") != true) {
-                                        ownerEmail = attendeeEmail;
-                                        if (ownerEmail.isEmpty != true) {
+                                        ownerAccount = attendeeEmail;
+                                        if (ownerAccount.isEmpty != true) {
                                             // Break from the attendee loop
                                             break;
                                         }
@@ -319,17 +319,17 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
                                     
                                 }
                             }
-                            if (ownerEmail.isEmpty != true) {
+                            if (ownerAccount.isEmpty != true) {
                                 // Break from the event loop
                                 break;
                             }
                         }
-                        if (ownerEmail.isEmpty != true) {
-                            let sourceIdentifierSet = ownerEmailSourceIdentifierMap[ownerEmail];
+                        if (ownerAccount.isEmpty != true) {
+                            let sourceIdentifierSet = ownerAccountSourceIdentifierMap[ownerAccount];
                             if (sourceIdentifierSet == nil) {
-                                ownerEmailSourceIdentifierMap[ownerEmail] = Set([ekCalendar.source.sourceIdentifier]);
+                                ownerAccountSourceIdentifierMap[ownerAccount] = Set([ekCalendar.source.sourceIdentifier]);
                             } else {
-                                ownerEmailSourceIdentifierMap[ownerEmail]?.insert(ekCalendar.source.sourceIdentifier);
+                                ownerAccountSourceIdentifierMap[ownerAccount]?.insert(ekCalendar.source.sourceIdentifier);
                             }
                             // Break out of the event scanning loop
                             break;
@@ -343,7 +343,7 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
             }
             
             for ekCalendar in ekCalendars {
-                let ownerEmail = ownerEmailSourceIdentifierMap.first(where: { $0.value.contains(ekCalendar.source.sourceIdentifier)})?.key
+                let ownerAccount = ownerAccountSourceIdentifierMap.first(where: { $0.value.contains(ekCalendar.source.sourceIdentifier)})?.key
                 let calendar = DeviceCalendar(
                     id: ekCalendar.calendarIdentifier,
                     name: ekCalendar.title,
@@ -352,7 +352,7 @@ public class SwiftDeviceCalendarPlugin: NSObject, FlutterPlugin, EKEventViewDele
                     color: UIColor(cgColor: ekCalendar.cgColor).rgb()!,
                     accountName: ekCalendar.source.title,
                     accountType: getAccountType(ekCalendar.source.sourceType),
-                    externalID:  (ekCalendar.value(forKeyPath: "_persistentObject._loadedProperties.externalID") as? String) ?? "", ownerEmail: ownerEmail ?? "")
+                    externalID:  (ekCalendar.value(forKeyPath: "_persistentObject._loadedProperties.externalID") as? String) ?? "", ownerAccount: ownerAccount ?? "")
                 calendars.append(calendar)
             }
             
