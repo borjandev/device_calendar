@@ -909,7 +909,7 @@ class CalendarDelegate(binding: ActivityPluginBinding?, context: Context) :
             calendarColor,
             accountName,
             accountType,
-            ownerAccount,
+            accountName,
             externalID
         )
 
